@@ -1,0 +1,273 @@
+---
+// src/components/Navbar.astro
+---
+
+<nav class="navbar" id="mainNavbar">
+    <div class="nav-container">
+        <div class="logo">
+            <a href="/">ZEUS<span>EMPIRE</span></a>
+        </div>
+
+        <div class="nav-links">
+            <a href="/" class="nav-item active">الرئيسية</a>
+            <a href="/#movies" class="nav-item">الأفلام</a>
+            <a href="/#series" class="nav-item">المسلسلات</a>
+            <a href="/live" class="nav-item">البث المباشر</a>
+        </div>
+
+        <div class="search-box">
+            <div class="search-input-wrapper">
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    placeholder="ابحث عن فيلم، مسلسل..." 
+                    autocomplete="off"
+                />
+                <button class="search-btn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                </button>
+            </div>
+            <div id="searchSuggestions" class="suggestions-dropdown hidden"></div>
+        </div>
+
+        <div class="user-actions">
+            <button id="openLoginBtn" class="btn-login">
+                <span>تسجيل الدخول</span>
+            </button>
+            
+            <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="القائمة">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </div>
+</nav>
+
+<style>
+    .navbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        padding: 20px 0;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 100%);
+    }
+
+    /* الحالة عند التمرير */
+    .navbar.nav-scrolled {
+        padding: 12px 0;
+        background: rgba(8, 8, 8, 0.95);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    .nav-container {
+        width: 92%;
+        max-width: 1440px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+    }
+
+    /* الشعار */
+    .logo a {
+        font-size: 1.8rem;
+        font-weight: 900;
+        color: #fff;
+        text-decoration: none;
+        letter-spacing: 1px;
+        display: flex;
+        align-items: center;
+    }
+
+    .logo span {
+        color: var(--primary, #ff0055);
+        font-size: 0.8rem;
+        background: rgba(255, 0, 85, 0.1);
+        padding: 2px 8px;
+        border-radius: 4px;
+        margin-right: 6px;
+        border: 1px solid rgba(255, 0, 85, 0.2);
+    }
+
+    /* الروابط */
+    .nav-links {
+        display: flex;
+        gap: 30px;
+    }
+
+    .nav-item {
+        color: rgba(255, 255, 255, 0.7);
+        text-decoration: none;
+        font-size: 0.95rem;
+        font-weight: 600;
+        transition: 0.3s;
+        position: relative;
+    }
+
+    .nav-item::after {
+        content: '';
+        position: absolute;
+        bottom: -5px;
+        right: 0;
+        width: 0;
+        height: 2px;
+        background: var(--primary, #ff0055);
+        transition: 0.3s;
+    }
+
+    .nav-item:hover::after, .nav-item.active::after {
+        width: 100%;
+    }
+
+    .nav-item:hover, .nav-item.active {
+        color: #fff;
+    }
+
+    /* صندوق البحث المحسن */
+    .search-box {
+        position: relative;
+        flex: 0 1 450px;
+    }
+
+    .search-input-wrapper {
+        display: flex;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 6px 15px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: 0.3s;
+    }
+
+    .search-input-wrapper:focus-within {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: var(--primary, #ff0055);
+        box-shadow: 0 0 20px rgba(255, 0, 85, 0.2);
+    }
+
+    #searchInput {
+        background: none;
+        border: none;
+        color: white;
+        padding: 8px;
+        width: 100%;
+        outline: none;
+        font-size: 0.9rem;
+        font-family: inherit;
+    }
+
+    .search-btn {
+        background: none;
+        border: none;
+        color: rgba(255, 255, 255, 0.5);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        transition: 0.3s;
+    }
+
+    .search-input-wrapper:focus-within .search-btn {
+        color: var(--primary, #ff0055);
+    }
+
+    /* أزرار المستخدم */
+    .user-actions {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .btn-login {
+        background: var(--primary, #ff0055);
+        color: white;
+        border: none;
+        padding: 10px 25px;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: 0.3s;
+        box-shadow: 0 4px 15px rgba(255, 0, 85, 0.3);
+    }
+
+    .btn-login:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(255, 0, 85, 0.5);
+        background: #ff1e6d;
+    }
+
+    .mobile-menu-btn {
+        display: none;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* الاستجابة للهواتف */
+    @media (max-width: 1024px) {
+        .nav-links { display: none; }
+        .mobile-menu-btn { display: flex; }
+        .search-box { flex: 1; }
+    }
+
+    @media (max-width: 580px) {
+        .logo a { font-size: 1.4rem; }
+        .logo span { display: none; }
+        .btn-login span { display: none; }
+        .btn-login::before { content: '\f2bd'; font-family: 'Font Awesome 5 Free'; font-weight: 900; }
+        .btn-login { padding: 10px 15px; }
+    }
+</style>
+
+<script>
+    // 1. منطق تغيير مظهر النافبار عند التمرير
+    const nav = document.getElementById('mainNavbar');
+    window.addEventListener('scroll', () => {
+        if (window.scrollY > 40) {
+            nav?.classList.add('nav-scrolled');
+        } else {
+            nav?.classList.remove('nav-scrolled');
+        }
+    });
+
+    // 2. منطق فتح نافذة تسجيل الدخول
+    const openLoginBtn = document.getElementById('openLoginBtn');
+    const authModal = document.getElementById('authModal');
+
+    openLoginBtn?.addEventListener('click', () => {
+        if (authModal) {
+            authModal.classList.remove('hidden');
+            // إذا كان هناك انيميشن دخول للـ modal يمكن تفعيله هنا
+        }
+    });
+
+    // 3. تحسينات تجربة البحث (UI)
+    const searchInput = document.getElementById('searchInput') as HTMLInputElement;
+    const suggestions = document.getElementById('searchSuggestions');
+
+    searchInput?.addEventListener('focus', () => {
+        if (searchInput.value.length > 2) {
+            suggestions?.classList.remove('hidden');
+        }
+    });
+
+    // إغلاق الاقتراحات عند النقر في الخارج
+    document.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement;
+        if (!searchInput?.contains(target) && !suggestions?.contains(target)) {
+            suggestions?.classList.add('hidden');
+        }
+    });
+</script>

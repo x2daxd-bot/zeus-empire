@@ -1,0 +1,22 @@
+<div class="skeleton-card">
+    <div class="skeleton-img"></div>
+    <div class="skeleton-text"></div>
+</div>
+
+<style>
+    .skeleton-card {
+        background: #1a1a1a;
+        border-radius: 12px;
+        height: 300px;
+        overflow: hidden;
+        animation: pulse 1.5s infinite;
+    }
+    .skeleton-img { height: 80%; background: #222; }
+    .skeleton-text { height: 20px; background: #222; margin: 15px; border-radius: 4px; width: 70%; }
+    
+    @keyframes pulse {
+        0% { opacity: 0.5; }
+        50% { opacity: 1; }
+        100% { opacity: 0.5; }
+    }
+</style>

@@ -1,0 +1,257 @@
+---
+export const prerender = false;
+
+import Navbar from '../../components/Navbar.astro';
+import '../../styles/global.css';
+
+const { id } = Astro.params;
+const API_KEY = import.meta.env.TMDB_API_KEY;
+
+let tv;
+let credits;
+
+try {
+    // جلب بيانات المسلسل وطاقم العمل في طلب واحد لتحسين السرعة
+    const [tvRes, creditsRes] = await Promise.all([
+        fetch(`https://api.themoviedb.org/3/tv/${id}?api_key=${API_KEY}&language=ar`),
+        fetch(`https://api.themoviedb.org/3/tv/${id}/credits?api_key=${API_KEY}&language=ar`)
+    ]);
+    
+    tv = await tvRes.json();
+    credits = await creditsRes.json();
+} catch (e) {
+    console.error("Fetch Error:", e);
+}
+
+if (!tv || tv.success === false) return Astro.redirect('/404');
+
+const seasons = tv.seasons ? tv.seasons.filter((s) => s.season_number > 0) : [];
+---
+
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <title>{tv.name} - ZEUS</title>
+</head>
+<body>
+    <Navbar />
+    
+    <div class="movie-backdrop" style={`background-image: url(https://image.tmdb.org/t/p/original${tv.backdrop_path})`}></div>
+
+    <div class="main-content">
+        <div class="container">
+            <div class="hero-section">
+                <div class="poster-area">
+                    <img src={`https://image.tmdb.org/t/p/w500${tv.poster_path}`} alt={tv.name} class="main-poster" />
+                </div>
+                
+                <div class="info-area">
+                    <h1>{tv.name}</h1>
+                    <div class="meta-row">
+                        <span class="badge rating">⭐ {tv.vote_average?.toFixed(1)}</span>
+                        <span class="badge">📺 {tv.number_of_seasons} مواسم</span>
+                        <span class="badge status">{tv.status === 'Returning Series' ? '🟢 مستمر' : '🔴 منتهي'}</span>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button id="favBtn" class="btn-secondary" data-id={id} data-name={tv.name} data-poster={tv.poster_path}>
+                            <span class="icon">❤</span>
+                            <span class="text">إضافة للمفضلة</span>
+                        </button>
+                        <button id="shareBtn" class="btn-secondary">
+                            <span>🔗</span> مشاركة
+                        </button>
+                    </div>
+
+                    <p class="overview">{tv.overview || "لا يوجد وصف متاح لهذا المسلسل حالياً."}</p>
+
+                    <div class="cast-section">
+                        <h3>أبرز الممثلين</h3>
+                        <div class="cast-list">
+                            {credits?.cast?.slice(0, 5).map((actor) => (
+                                <div class="cast-item">
+                                    <img src={actor.profile_path ? `https://image.tmdb.org/t/p/w185${actor.profile_path}` : '/no-avatar.png'} alt={actor.name} />
+                                    <span>{actor.name}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="episodes-container glass-effect">
+                <div class="section-header">
+                    <h2><span class="icon">🎬</span> قائمة الحلقات</h2>
+                    <select id="seasonSelect" class="season-dropdown">
+                        <option value="" disabled selected>اختر الموسم...</option>
+                        {seasons.map((s) => <option value={s.season_number}>{s.name}</option>)}
+                    </select>
+                </div>
+
+                <div id="episodesList" class="episodes-grid hidden">
+                    </div>
+                <div id="loader" class="loader hidden">جاري جلب الحلقات...</div>
+            </div>
+
+            <div class="video-section hidden" id="playerSection">
+                <div class="player-header">
+                    <h2 id="currentlyPlaying">جاري التشغيل...</h2>
+                    <button class="close-player" onclick="document.getElementById('playerSection').classList.add('hidden')">إغلاق ✖</button>
+                </div>
+                <div class="player-wrapper">
+                    <iframe id="zeusPlayer" src="" allowfullscreen frameborder="0"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .movie-backdrop {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
+            background-size: cover; background-position: center;
+            z-index: -1; filter: brightness(0.3) blur(5px);
+        }
+        .main-content { padding-top: 100px; color: white; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        
+        .hero-section { display: grid; grid-template-columns: 300px 1fr; gap: 40px; margin-bottom: 50px; }
+        .main-poster { width: 100%; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.1); }
+        
+        .info-area h1 { font-size: 3.5rem; margin: 0 0 15px 0; background: linear-gradient(to bottom, #fff, #888); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .meta-row { display: flex; gap: 10px; margin-bottom: 20px; }
+        .badge { background: rgba(255,255,255,0.1); padding: 8px 15px; border-radius: 8px; font-size: 0.9rem; border: 1px solid rgba(255,255,255,0.05); }
+        .rating { color: gold; font-weight: bold; border-color: rgba(255,215,0,0.3); }
+        
+        .action-buttons { display: flex; gap: 15px; margin-bottom: 25px; }
+        .btn-secondary { background: rgba(255,255,255,0.1); border: 1px solid #444; color: white; padding: 10px 20px; border-radius: 30px; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 8px; }
+        .btn-secondary:hover { background: var(--primary); border-color: var(--primary); }
+        .is-favorite { background: var(--primary); border-color: var(--primary); }
+
+        .overview { line-height: 1.8; font-size: 1.1rem; color: #ccc; max-width: 800px; }
+
+        /* طاقم العمل */
+        .cast-section { margin-top: 30px; }
+        .cast-list { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px; }
+        .cast-item { text-align: center; width: 80px; flex-shrink: 0; }
+        .cast-item img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; margin-bottom: 5px; border: 2px solid var(--primary); }
+        .cast-item span { font-size: 0.7rem; display: block; color: #aaa; }
+
+        /* قسم الحلقات */
+        .episodes-container { padding: 30px; border-radius: 20px; margin-bottom: 50px; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .season-dropdown { background: #111; color: white; border: 1px solid var(--primary); padding: 10px 20px; border-radius: 10px; width: 250px; outline: none; }
+        
+        .episodes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px; }
+        .episode-btn { background: rgba(255,255,255,0.05); border: 1px solid #333; color: white; padding: 15px; border-radius: 10px; cursor: pointer; transition: 0.3s; }
+        .episode-btn:hover, .episode-btn.active { background: var(--primary); transform: scale(1.05); box-shadow: 0 0 20px var(--primary-glow); }
+
+        .video-section { background: #000; border-radius: 20px; overflow: hidden; border: 1px solid var(--primary); margin-top: 30px; }
+        .player-header { padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; background: #0a0a0a; }
+        .close-player { background: none; border: none; color: #666; cursor: pointer; }
+        .player-wrapper { position: relative; padding-bottom: 56.25%; height: 0; }
+        .player-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+        @media (max-width: 768px) {
+            .hero-section { grid-template-columns: 1fr; text-align: center; }
+            .poster-area { display: none; }
+            .info-area h1 { font-size: 2.2rem; }
+            .meta-row, .action-buttons { justify-content: center; }
+        }
+    </style>
+
+    <script>
+        import { db, auth } from '../../lib/firebase';
+        import { doc, setDoc, deleteDoc, getDoc } from "firebase/firestore";
+
+        const favBtn = document.getElementById('favBtn');
+        const seasonSelect = document.getElementById('seasonSelect');
+        const episodesList = document.getElementById('episodesList');
+        const loader = document.getElementById('loader');
+        const playerSection = document.getElementById('playerSection');
+        const zeusPlayer = document.getElementById('zeusPlayer');
+        const currentlyPlaying = document.getElementById('currentlyPlaying');
+
+        const tvId = favBtn?.dataset.id;
+        const apiKey = "0e538b02c5ce3325114150f1f0399cae"; // يمكنك استخدام import.meta.env هنا أيضاً
+
+        // 1. نظام المفضلة
+        auth.onAuthStateChanged(async (user) => {
+            if (user && tvId) {
+                const docRef = doc(db, "users", user.uid, "favorites", tvId);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    favBtn.classList.add('is-favorite');
+                    favBtn.querySelector('.text').innerText = "في المفضلة";
+                }
+            }
+        });
+
+        favBtn?.addEventListener('click', async () => {
+            const user = auth.currentUser;
+            if (!user) return alert("سجل دخولك أولاً!");
+
+            const docRef = doc(db, "users", user.uid, "favorites", tvId);
+            if (favBtn.classList.contains('is-favorite')) {
+                await deleteDoc(docRef);
+                favBtn.classList.remove('is-favorite');
+                favBtn.querySelector('.text').innerText = "إضافة للمفضلة";
+            } else {
+                await setDoc(docRef, {
+                    id: tvId,
+                    name: favBtn.dataset.name,
+                    poster: favBtn.dataset.poster,
+                    type: 'tv'
+                });
+                favBtn.classList.add('is-favorite');
+                favBtn.querySelector('.text').innerText = "في المفضلة";
+            }
+        });
+
+        // 2. نظام جلب الحلقات
+        seasonSelect?.addEventListener('change', async (e) => {
+            const seasonNum = e.target.value;
+            episodesList.classList.add('hidden');
+            loader.classList.remove('hidden');
+
+            try {
+                const res = await fetch(`https://api.themoviedb.org/3/tv/${tvId}/season/${seasonNum}?api_key=${apiKey}&language=ar`);
+                const data = await res.json();
+                
+                episodesList.innerHTML = '';
+                data.episodes.forEach(ep => {
+                    const btn = document.createElement('button');
+                    btn.className = 'episode-btn';
+                    btn.textContent = `حلقة ${ep.episode_number}`;
+                    btn.onclick = () => {
+                        document.querySelectorAll('.episode-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        zeusPlayer.src = `https://vidsrc.to/embed/tv/${tvId}/${seasonNum}/${ep.episode_number}`;
+                        currentlyPlaying.textContent = `الموسم ${seasonNum} - حلقة ${ep.episode_number}`;
+                        playerSection.classList.remove('hidden');
+                        playerSection.scrollIntoView({ behavior: 'smooth' });
+                    };
+                    episodesList.appendChild(btn);
+                });
+
+                loader.classList.add('hidden');
+                episodesList.classList.remove('hidden');
+            } catch (err) {
+                loader.innerText = "خطأ في جلب البيانات.";
+            }
+        });
+
+        // 3. زر المشاركة
+        document.getElementById('shareBtn')?.addEventListener('click', () => {
+            if (navigator.share) {
+                navigator.share({
+                    title: document.title,
+                    url: window.location.href
+                });
+            } else {
+                alert("تم نسخ الرابط!");
+                navigator.clipboard.writeText(window.location.href);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,56 @@
+---
+import Navbar from '../components/Navbar.astro';
+import '../styles/global.css';
+---
+
+<html lang="ar" dir="rtl">
+<head>
+    <title>ZEUS LIVE - البث المباشر للمباريات</title>
+</head>
+<body>
+    <Navbar />
+    
+    <main class="live-container">
+        <header class="live-header">
+            <div class="live-indicator">
+                <span class="dot"></span> مباشر الآن
+            </div>
+            <h1>جدول مباريات اليوم</h1>
+            <p>تابع أهم المباريات الدولية والمحلية بجودة عالية</p>
+        </header>
+
+        <div class="matches-wrapper glass-effect">
+            <div id="wg-api-football-games"
+                data-host="v3.football.api-sports.io"
+                data-key="7df66d51065183350280540d5b46d790" 
+                data-theme="dark"
+                data-refresh="60"
+                class="api_football_loader">
+            </div>
+        </div>
+    </main>
+
+    <script type="module" src="https://widgets.api-sports.io/2.0.3/widgets.js"></script>
+
+    <style>
+        .live-container { padding: 120px 5%; max-width: 1200px; margin: 0 auto; min-height: 100vh; }
+        .live-header { text-align: center; margin-bottom: 50px; }
+        .live-header h1 { font-size: 3rem; color: white; margin: 10px 0; }
+        .live-header p { color: #888; font-size: 1.2rem; }
+        
+        .live-indicator {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(255, 0, 85, 0.1); color: #ff0055;
+            padding: 5px 15px; border-radius: 20px; font-weight: bold;
+        }
+        .dot { width: 8px; height: 8px; background: #ff0055; border-radius: 50%; animation: blink 1s infinite; }
+
+        .matches-wrapper {
+            padding: 20px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1);
+            min-height: 500px;
+        }
+
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    </style>
+</body>
+</html>
